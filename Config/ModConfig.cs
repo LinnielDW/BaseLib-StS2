@@ -1,13 +1,17 @@
-﻿using System.Reflection;
+﻿using System.ComponentModel;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using BaseLib.Config.UI;
 using BaseLib.Extensions;
 using BaseLib.Utils;
 using Godot;
+using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Assets;
 using MegaCrit.Sts2.Core.Helpers;
+using MegaCrit.Sts2.Core.Localization;
+using MegaCrit.Sts2.Core.Nodes.Screens.Settings;
 using Environment = System.Environment;
 
 namespace BaseLib.Config;
@@ -19,7 +23,6 @@ public abstract partial class ModConfig
     private static readonly Font KreonBold = PreloadManager.Cache.GetAsset<Font>("res://themes/kreon_bold_shared.tres");
     
     public event EventHandler? ConfigChanged;
-    public delegate void ValuesChanged();
 
     private readonly string _path;
 
@@ -82,11 +85,11 @@ public abstract partial class ModConfig
         
         _fileActive = true;
         
-        Dictionary<string, object> values = [];
+        Dictionary<string, string> values = [];
         foreach (var property in ConfigProperties)
         {
             var value = property.GetValue(null);
-            if (value != null) values.Add(property.Name, value);
+            if (value != null) values.Add(property.Name, value.ToString() ?? string.Empty);
         }
 
         try
@@ -113,7 +116,7 @@ public abstract partial class ModConfig
         try
         {
             await using var fileStream = File.OpenRead(_path);
-            var values = await JsonSerializer.DeserializeAsync<Dictionary<string, object>>(fileStream);
+            var values = await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(fileStream);
 
             if (values != null)
             {
@@ -121,10 +124,25 @@ public abstract partial class ModConfig
                 {
                     if (values.TryGetValue(property.Name, out var value))
                     {
-                        object? oldVal = property.GetValue(null);
-                        if (oldVal != value)
+                        var converter = TypeDescriptor.GetConverter(property.PropertyType);
+                        try
                         {
-                            property.SetValue(null, value);
+                            var configVal = converter.ConvertFromString(value);
+                            if (configVal == null)
+                            {
+                                MainFile.Logger.Warn($"Failed to load saved config value \"{value}\" for property {property.Name}");
+                                continue;
+                            }
+                        
+                            var oldVal = property.GetValue(null);
+                            if (!configVal.Equals(oldVal))
+                            {
+                                property.SetValue(null, configVal);
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            MainFile.Logger.Warn($"Failed to load saved config value \"{value}\" for property {property.Name}");
                         }
                     }
                 }
@@ -141,21 +159,77 @@ public abstract partial class ModConfig
         _fileActive = false;
     }
 
-    
+    private string GetLabelText(PropertyInfo property)
+    {
+        var prefix = GetType().GetPrefix();
+        var loc = LocString.GetIfExists("settings_ui", prefix + StringHelper.Slugify(property.Name) + ".title");
+        return loc != null ? loc.GetFormattedText() : property.Name;
+    }
 
     public NConfigTickbox MakeToggleOption(Control parent, PropertyInfo property)
     {
         //format varName. Or support localization keys. Check defining namespace.
-        MarginContainer container = MakeOptionContainer(parent, "Toggle_" + property.Name, property.Name);
+        MarginContainer container = MakeOptionContainer(parent, "Toggle_" + property.Name, GetLabelText(property));
         
         var tickbox = new NConfigTickbox().TransferAllNodes(SceneHelper.GetScenePath("screens/settings_tickbox"));
-        tickbox.SetCustomMinimumSize(new (320, 64));
         tickbox.Initialize(this, property);
         
         container.AddChild(tickbox);
-        tickbox.SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd;
-        tickbox.SizeFlagsVertical = Control.SizeFlags.Fill;
         return tickbox;
+    }
+
+    private static readonly FieldInfo DropdownNode = AccessTools.DeclaredField(typeof(NDropdownPositioner), "_dropdownNode");
+    public NDropdownPositioner MakeDropdownOption(Control parent, PropertyInfo property)
+    {
+        MarginContainer container = MakeOptionContainer(parent, "Dropdown_" + property.Name, GetLabelText(property));
+
+        var dropdown = new NConfigDropdown().TransferAllNodes(SceneHelper.GetScenePath("screens/settings_dropdown"));
+        
+        //Generate dropdown items
+        var items = MakeDropdownItems(property, out var currentIndex);
+        dropdown.SetItems(items, currentIndex);
+        
+        var dropdownPositioner = new NDropdownPositioner();
+        dropdownPositioner.SetCustomMinimumSize(new(320, 64));
+        dropdownPositioner.FocusMode = Control.FocusModeEnum.All;
+        dropdownPositioner.SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd;
+        dropdownPositioner.SizeFlagsVertical = Control.SizeFlags.Fill;
+        DropdownNode.SetValue(dropdownPositioner, dropdown);
+
+        container.GetParent().AddChild(dropdown);
+        container.AddChild(dropdownPositioner);
+
+        return dropdownPositioner;
+    }
+
+    private List<NConfigDropdownItem.ConfigDropdownItem> MakeDropdownItems(PropertyInfo property, out int currentIndex)
+    {
+        List<NConfigDropdownItem.ConfigDropdownItem> items = [];
+        var type = property.PropertyType;
+        var prefix = GetType().GetPrefix();
+        var currentValue = property.GetValue(null);
+        int count = 0;
+        currentIndex = 0;
+        
+        if (type.IsEnum)
+        {
+            foreach (var value in type.GetEnumValues())
+            {
+                if (currentValue != null && currentValue.Equals(value))
+                {
+                    currentIndex = count;
+                }
+                ++count;
+                var loc = LocString.GetIfExists("settings_ui", $"{prefix}{StringHelper.Slugify(property.Name)}.{value}");
+                items.Add(new(loc?.GetRawText() ?? value?.ToString() ?? "UNKNOWN", () => property.SetValue(null, value)));
+            }
+        }
+        else //Check for dropdown options attribute
+        {
+            throw new NotSupportedException("Dropdown only supports enum types currently");
+        }
+
+        return items;
     }
 
     protected static MarginContainer MakeOptionContainer(Control parent, string name, string labelText)

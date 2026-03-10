@@ -7,6 +7,13 @@ public partial class NConfigTickbox : NSettingsTickbox
 {
     private ModConfig? _config;
     private PropertyInfo? _property;
+
+    public NConfigTickbox()
+    {
+        SetCustomMinimumSize(new(320, 64));
+        SizeFlagsHorizontal = SizeFlags.ShrinkEnd;
+        SizeFlagsVertical = SizeFlags.Fill;
+    }
     
     public override void _Ready()
     {

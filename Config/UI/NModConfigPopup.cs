@@ -1,5 +1,4 @@
-﻿using BaseLib.Extensions;
-using BaseLib.Utils;
+﻿using BaseLib.Utils;
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Assets;
@@ -144,6 +143,9 @@ public partial class NModConfigPopup : NClickableControl
         if (_currentConfig != null) _currentConfig.ConfigChanged -= OnConfigChanged;
         Hide();
         _optionContainer.FreeChildren();
+        foreach (var child in _optionContainer.GetParent().GetChildren())
+            if (child != _optionContainer)
+                child.QueueFreeSafely();
     }
 
     private void OnConfigChanged(object? sender, EventArgs e)

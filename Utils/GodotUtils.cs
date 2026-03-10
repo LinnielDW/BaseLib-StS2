@@ -38,6 +38,8 @@ public static class GodotUtils
             if (requiredNames.Remove(child.Name) && uniqueNames) child.UniqueNameInOwner = true;
             target.AddChild(child);
             child.Owner = target;
+
+            SetChildrenOwner(target, child);
         }
 
         if (requiredNames.Count > 0)
@@ -46,5 +48,14 @@ public static class GodotUtils
         }
 
         source.QueueFree();
+    }
+
+    private static void SetChildrenOwner(Node target, Node child)
+    {
+        foreach (var grandchild in child.GetChildren())
+        {
+            grandchild.Owner = target;
+            SetChildrenOwner(target, grandchild);
+        }
     }
 }

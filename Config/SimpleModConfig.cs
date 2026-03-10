@@ -23,12 +23,26 @@ public class SimpleModConfig : ModConfig
             {
                 t = property.PropertyType;
                 var previous = current;
-                current = Generators[t](this, options, property);
+                //Special case
+                if (t.IsEnum)
+                {
+                    current = Generators[typeof(Enum)](this, options, property);
+                }
+                else
+                {
+                    current = Generators[t](this, options, property);
+                }
                 
                 if (previous == null) continue;
                 
-                current.FocusNeighborLeft = current.FocusNeighborTop = current.GetPathTo(previous);
-                previous.FocusNeighborRight = previous.FocusNeighborBottom = previous.GetPathTo(current);
+                if (current.FocusNeighborBottom == null) MainFile.Logger.Info("NEIGHBOR DEFAULT NULL");
+                else MainFile.Logger.Info($"NEIGHBOR DEFAULT: {current.FocusNeighborBottom}");
+                NodePath path = current.GetPathTo(previous);
+                current.FocusNeighborLeft ??= path;
+                current.FocusNeighborTop ??= path;
+                path = previous.GetPathTo(current);
+                previous.FocusNeighborRight ??= path;
+                previous.FocusNeighborBottom ??= path;
             }
         }
         catch (KeyNotFoundException)
@@ -42,6 +56,10 @@ public class SimpleModConfig : ModConfig
         { 
             typeof(bool),
             (cfg, control, property) => cfg.MakeToggleOption(control, property)
+        },
+        { 
+            typeof(Enum),
+            (cfg, control, property) => cfg.MakeDropdownOption(control, property)
         }
     };
 }

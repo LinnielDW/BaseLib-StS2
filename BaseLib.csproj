@@ -11,10 +11,10 @@
         <IsPackable>true</IsPackable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageId>Alchyr.Sts2.BaseLib</PackageId>
-        <Version>0.0.3</Version>
+        <Version>0.0.4</Version>
         <Authors>Alchyr</Authors>
         <Description>Mod for Slay the Spire 2 providing utilities and features for other mods.</Description>
-        <PackageReleaseNotes>Add .pck to content</PackageReleaseNotes>
+        <PackageReleaseNotes>Add basic mod config</PackageReleaseNotes>
         <PackageTags>c#</PackageTags>
         <NoWarn>$(NoWarn);NU5128</NoWarn>
 

@@ -1,9 +1,13 @@
-﻿namespace BaseLib.Config;
+﻿using MegaCrit.Sts2.Core.Entities.Cards;
+
+namespace BaseLib.Config;
 
 internal class BaseLibConfig : SimpleModConfig
 {
     public static bool Test { get; set; } = true;
-    public static bool One { get; set; } = true;
+
+    public static CardKeyword Keyword { get; set; } = CardKeyword.None;
+    /*public static bool One { get; set; } = true;
     public static bool Two { get; set; } = true;
     public static bool Three { get; set; } = true;
     public static bool Testing { get; set; } = true;
@@ -16,5 +20,5 @@ internal class BaseLibConfig : SimpleModConfig
     public static bool G { get; set; } = true;
     public static bool H { get; set; } = true;
     public static bool I { get; set; } = true;
-    public static bool J { get; set; } = true;
+    public static bool J { get; set; } = true;*/
 }
