@@ -10,3 +10,4 @@ build/BaseLib.pck
 *.uid
 *.user
 *.import
+.vscode/*
