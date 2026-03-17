@@ -11,7 +11,7 @@ namespace BaseLib.Patches.Hooks;
 /// IHealAmountModifier.ModifyHealAdditive() -> AbstractModel.ModifyHealAmount() -> IHealAmountModifier.ModifyHealMultiplicative()
 /// </summary>
 [HarmonyPatch(typeof(Hook), nameof(Hook.ModifyHealAmount))]
-public static class ModifyHealAmountPrefix
+public static class ModifyHealAmountPatches
 {
     static void Prefix(IRunState runState, CombatState? combatState, Creature creature, ref decimal amount)
     {
