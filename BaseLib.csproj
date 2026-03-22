@@ -106,6 +106,7 @@
         <None Include="export_presets.cfg" />
         <None Include="BaseLib.json" />
         <None Include="Publish/*" />
+        <None Include="**/*.gd" />
     </ItemGroup>
 
     <ItemGroup>
