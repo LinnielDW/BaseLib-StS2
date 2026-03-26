@@ -30,6 +30,7 @@ public partial class NLogWindow : Window
 
     private string _filterText = "";
     private Regex? _regex;
+    private bool _settingChanged;
 
     private bool _isFollowingLog = true;
 
@@ -67,12 +68,15 @@ public partial class NLogWindow : Window
             _logLevelDropdown.AddItem(level.ToString());
         }
 
-        _logLevelDropdown.Selected = (int)LogLevel.Info;
+        _logLevelDropdown.Selected = BaseLibConfig.LastLogLevel;
+        _regexButton.ButtonPressed = BaseLibConfig.LogUseRegex;
+        _inverseButton.ButtonPressed = BaseLibConfig.LogInvertFilter;
+        _filterInput.Text = BaseLibConfig.LogLastFilter;
 
-        _logLevelDropdown.ItemSelected += (_) => Refresh();
-        _filterInput.TextChanged += (_) => UpdateFilter();
-        _regexButton.Toggled += (_) => UpdateFilter();
-        _inverseButton.Toggled += (_) => { Refresh(); ScrollToBottomAsync(); };
+        _filterInput.TextChanged += (_) => { _settingChanged = true; UpdateFilter(); };
+        _regexButton.Toggled += (_) => { _settingChanged = true; UpdateFilter(); };
+        _inverseButton.Toggled += (_) => { _settingChanged = true; Refresh(); ScrollToBottomAsync(); };
+        _logLevelDropdown.ItemSelected += (_) => { _settingChanged = true; Refresh(); ScrollToBottomAsync(); };
 
         SizeChanged += UpdateText;
         CloseRequested += QueueFree;
@@ -82,7 +86,7 @@ public partial class NLogWindow : Window
         scrollbar.ValueChanged += OnScrollbarValueChanged;
 
         _isFollowingLog = true;
-        Refresh();
+        UpdateFilter(); // Also calls Refresh()
     }
 
     private void UpdateFilter()
@@ -112,11 +116,22 @@ public partial class NLogWindow : Window
 
     public void Refresh()
     {
+        if (!IsNodeReady()) return;
         UpdateText();
+
+        if (!_settingChanged) return;
+
+        _settingChanged = false;
+        BaseLibConfig.LastLogLevel = _logLevelDropdown!.Selected;
+        BaseLibConfig.LogInvertFilter = _inverseButton!.ButtonPressed;
+        BaseLibConfig.LogUseRegex = _regexButton!.ButtonPressed;
+        BaseLibConfig.LogLastFilter = _filterText;
+        ModConfig.SaveDebounced<BaseLibConfig>();
     }
 
     private void UpdateText()
     {
+        if (!IsNodeReady()) return;
         if (_logLabel is null || _scrollContainer is null || _logLevelDropdown is null) return;
 
         _isFollowingLog = _isFollowingLog || IsNearBottom();
