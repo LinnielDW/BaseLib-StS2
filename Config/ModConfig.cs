@@ -54,7 +54,7 @@ public abstract partial class ModConfig
 
     private readonly string _path;
     public string ModPrefix { get; private set; }
-    public string? ModId { get; set; } // Injected by ModConfigRegistry
+    [ConfigIgnore] public string? ModId { get; set; } // Injected by ModConfigRegistry
 
     private readonly string _modConfigName;
     private bool _savingDisabled;
@@ -458,7 +458,6 @@ public abstract partial class ModConfig
         return button;
     }
 
-    private static readonly FieldInfo DropdownNode = AccessTools.DeclaredField(typeof(NDropdownPositioner), "_dropdownNode");
     /// <inheritdoc cref="CreateRawTickboxControl"/>
     protected NDropdownPositioner CreateRawDropdownControl(PropertyInfo property)
     {
@@ -472,7 +471,7 @@ public abstract partial class ModConfig
         dropdownPositioner.SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd;
         dropdownPositioner.SizeFlagsVertical = Control.SizeFlags.Fill;
 
-        DropdownNode.SetValue(dropdownPositioner, dropdown);
+        dropdownPositioner._dropdownNode = dropdown;
 
         dropdownPositioner.AddChild(dropdown);
         dropdownPositioner.MouseFilter = Control.MouseFilterEnum.Ignore;

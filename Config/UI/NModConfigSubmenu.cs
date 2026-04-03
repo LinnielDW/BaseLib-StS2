@@ -1,6 +1,5 @@
 ﻿using BaseLib.Extensions;
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Assets;
 using MegaCrit.Sts2.Core.ControllerInput;
@@ -14,7 +13,7 @@ namespace BaseLib.Config.UI;
 
 public partial class NModConfigSubmenu : NSubmenu
 {
-    private NBackButton? _backButton;
+    private new NBackButton? _backButton;
     private NNativeScrollableContainer _leftScrollArea;
     private VBoxContainer _modListVbox;
     private Control _modListPanel;
@@ -204,13 +203,7 @@ public partial class NModConfigSubmenu : NSubmenu
         {
             // An early return in NClickableControl.Enable() causes a desync issue where _isEnabled is true, but the
             // button isn't enabled/visible. Bypass the return and *actually* enable the button.
-            var enabledField = AccessTools.Field(typeof(NBackButton), "_isEnabled");
-            if (enabledField == null)
-            {
-                BaseLibMain.Logger.Error("_isEnabled field not found in NBackButton; NModConfigSubmenu needs to be fixed");
-                return;
-            }
-            enabledField.SetValue(_backButton, false);
+            _backButton._isEnabled = false;
             _backButton.Enable();
         }
     }

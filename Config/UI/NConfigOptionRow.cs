@@ -1,6 +1,5 @@
 ﻿using System.Reflection;
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
@@ -122,14 +121,11 @@ public partial class NConfigOptionRow : MarginContainer
 
         var tipSet = NHoverTipSet.CreateAndShow(this, _hoverTip);
 
-        var containerField = AccessTools.Field(typeof(NHoverTipSet), "_textHoverTipContainer");
-        if (containerField?.GetValue(tipSet) is not VFlowContainer textContainer) return;
-
         var hoverTipWidth = 360f; // Fallback
-        var hoverTipHeight = textContainer.Size.Y;
+        var hoverTipHeight = tipSet._textHoverTipContainer.Size.Y;
 
         // The container lies: wider hover tips will render outside the screen if we read its width (height is OK)
-        foreach (var child in textContainer.GetChildren())
+        foreach (var child in tipSet._textHoverTipContainer.GetChildren())
         {
             if (child is Control childControl)
                 hoverTipWidth = Mathf.Max(hoverTipWidth, childControl.Size.X);

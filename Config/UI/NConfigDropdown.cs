@@ -1,7 +1,6 @@
 ﻿using System.Reflection;
 using BaseLib.Utils;
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
@@ -19,8 +18,6 @@ public partial class NConfigDropdown : NSettingsDropdown
     private int _currentDisplayIndex = -1;
     private float _lastGlobalY;
     private NodePath _selfNodePath = new(".");
-
-    private static readonly FieldInfo DropdownContainerField = AccessTools.Field(typeof(NDropdown), "_dropdownContainer");
 
     public NConfigDropdown()
     {
@@ -82,11 +79,11 @@ public partial class NConfigDropdown : NSettingsDropdown
             FocusNeighborRight = _selfNodePath;
         }
 
-        if (DropdownContainerField.GetValue(this) is Control { Visible: true } container)
+        if (IsNodeReady() && _dropdownContainer.Visible)
         {
             // Ensure the list of items follows the dropdown itself when the parent container is scrolled.
             // GlobalPosition/TopLevel is used to override the clipping from NModConfigPopup's edges.
-            container.GlobalPosition = GlobalPosition + new Vector2(0, Size.Y);
+            _dropdownContainer.GlobalPosition = GlobalPosition + new Vector2(0, Size.Y);
         }
 
         _lastGlobalY = GlobalPosition.Y;
@@ -116,18 +113,15 @@ public partial class NConfigDropdown : NSettingsDropdown
 
         _dropdownItems.GetParent<NDropdownContainer>().RefreshLayout();
 
-        if (DropdownContainerField.GetValue(this) is Control container)
-        {
-            container.VisibilityChanged += () => {
-                container.TopLevel = container.Visible;
-                container.GlobalPosition = GlobalPosition + new Vector2(0, Size.Y);
+        _dropdownContainer.VisibilityChanged += () => {
+            _dropdownContainer.TopLevel = _dropdownContainer.Visible;
+            _dropdownContainer.GlobalPosition = GlobalPosition + new Vector2(0, Size.Y);
 
-                // Focus the last selected entry (base class always selects the first)
-                if (_currentDisplayIndex < 0 || _currentDisplayIndex >= _items.Count) return;
-                var entry = _dropdownItems.GetChildOrNull<NConfigDropdownItem>(_currentDisplayIndex);
-                entry?.TryGrabFocus();
-            };
-        }
+            // Focus the last selected entry (base class always selects the first)
+            if (_currentDisplayIndex < 0 || _currentDisplayIndex >= _items.Count) return;
+            var entry = _dropdownItems.GetChildOrNull<NConfigDropdownItem>(_currentDisplayIndex);
+            entry?.TryGrabFocus();
+        };
     }
     
     private void OnDropdownItemSelected(NDropdownItem nDropdownItem)

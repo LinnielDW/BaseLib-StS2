@@ -56,13 +56,8 @@ public static class InjectMainMenuModConfigPatch
     {
         // Fix minor issue: left/right jumps immediately to the Mod Configuration entry because it's the widest
         // (in English, at least). Without our patch, left/right never does anything, so restore that behavior.
-        var mainMenuButtonsProp = AccessTools.Property(typeof(NMainMenu), "MainMenuButtons");
-        if (mainMenuButtonsProp == null) return;
-        if (mainMenuButtonsProp.GetValue(__instance) is not NButton?[] nativeButtons) return;
-
-        foreach (var button in nativeButtons)
+        foreach (var button in __instance.MainMenuButtons)
         {
-            if (button == null) continue;
             button.FocusNeighborLeft = new NodePath(".");
             button.FocusNeighborRight = new NodePath(".");
         }
@@ -77,9 +72,7 @@ public static class InjectMainMenuModConfigPatch
         modConfigButton.Connect(NClickableControl.SignalName.Released, Callable.From(
             new Action<NButton>(_ =>
             {
-                var lastHitField = AccessTools.Field(typeof(NMainMenu), "_lastHitButton");
-                lastHitField?.SetValue(mainMenu, modConfigButton);
-
+                mainMenu._lastHitButton = modConfigButton;
                 mainMenu.SubmenuStack.PushSubmenuType<NModConfigSubmenu>();
             })));
 
@@ -122,16 +115,17 @@ public static class InjectSettingsModConfigPatch
         var modConfigDivider = origDivider.Duplicate();
         var modConfigContainer = (MarginContainer)modSettingsContainer.Duplicate();
 
-        feedbackContainer.AddSibling(modConfigDivider);
-        modConfigDivider.AddSibling(modConfigContainer);
-
         modConfigContainer.UniqueNameInOwner = false;
         modConfigContainer.Name = "BaseLibModConfig";
         modConfigContainer.Visible = true;
 
         var modConfigButton = modConfigContainer.GetNodeOrNull<Control>("ModdingButton");
-        modConfigButton.UniqueNameInOwner = false;
-        modConfigButton.Name = "ModConfigButton";
+        modConfigButton.Name = "BaseLibModConfigButton";
+        modConfigButton.UniqueNameInOwner = true;
+
+        feedbackContainer.AddSibling(modConfigDivider);
+        modConfigDivider.AddSibling(modConfigContainer);
+        modConfigButton.Owner = settingsScreen;
 
         var rowLabel = modConfigContainer.GetNodeOrNull<RichTextLabel>("Label");
         rowLabel.Text = LocString.GetIfExists("settings_ui", "BASELIB.MOD_CONFIG_SETTINGS_ROW.title")
@@ -143,9 +137,7 @@ public static class InjectSettingsModConfigPatch
 
         modConfigButton.Connect(NClickableControl.SignalName.Released, Callable.From<NButton>(_ =>
         {
-            var stackField = AccessTools.Field(typeof(NSubmenu), "_stack");
-
-            if (stackField.GetValue(settingsScreen) is NMainMenuSubmenuStack stackInstance)
+            if (settingsScreen._stack is NMainMenuSubmenuStack stackInstance)
                 stackInstance.PushSubmenuType<NModConfigSubmenu>();
             else
                 ModConfig.ModConfigLogger.Error("Unable to open BaseLib's Mod Configuration.", false);
@@ -170,5 +162,22 @@ public static class InjectSettingsModConfigPatch
         modConfigButton.FocusNeighborBottom = modConfigButton.GetPathTo(modSettingsButton);
         feedbackButton.FocusNeighborBottom = feedbackButton.GetPathTo(modConfigButton);
         modSettingsButton.FocusNeighborTop = modSettingsButton.GetPathTo(modConfigButton);
+    }
+}
+
+[HarmonyPatch(typeof(NSettingsScreen), "OnSubmenuShown")]
+public static class NSettingsScreen_OnSubmenuShown_Patch
+{
+    public static void Postfix(NSettingsScreen __instance)
+    {
+        // Only allow clicks when in the main menu; supporting in-run config will likely need work, and a lot of testing.
+        // Since it may break custom mod configs, it may be better to never support it.
+        var inMainMenu = __instance._stack is NMainMenuSubmenuStack;
+
+        var button = __instance.GetNodeOrNull<NButton>("%BaseLibModConfigButton");
+        if (button == null) return;
+
+        if (inMainMenu) button.Enable();
+        else button.Disable();
     }
 }
