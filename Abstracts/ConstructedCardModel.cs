@@ -19,21 +19,21 @@ public abstract class ConstructedCardModel(
     : CustomCardModel(baseCost, type, rarity, target, showInCardLibrary, autoAdd)
 {
     private readonly List<CardKeyword> _cardKeywords = [];
-    private readonly List<DynamicVar> _dynamicVars = [];
+    private readonly List<DynamicVar> _constructedDynamicVars = [];
     private readonly List<TooltipSource> _hoverTips = [];
-    private readonly HashSet<CardTag> _tags = [];
+    private readonly HashSet<CardTag> _constructedTags = [];
     private bool _hasCalculatedVar = false;
 
-    protected sealed override IEnumerable<DynamicVar> CanonicalVars => _dynamicVars;
+    protected sealed override IEnumerable<DynamicVar> CanonicalVars => _constructedDynamicVars;
     public sealed override IEnumerable<CardKeyword> CanonicalKeywords => _cardKeywords;
     protected sealed override IEnumerable<IHoverTip> ExtraHoverTips => _hoverTips.Select(tip => tip.Tip(this));
-    protected sealed override HashSet<CardTag> CanonicalTags => _tags;
+    protected sealed override HashSet<CardTag> CanonicalTags => _constructedTags;
 
     protected ConstructedCardModel WithVars(params DynamicVar[] vars)
     {
         foreach (var dynVar in vars)
         {
-            _dynamicVars.Add(dynVar);
+            _constructedDynamicVars.Add(dynVar);
             var type = dynVar.GetType();
             if (!type.IsGenericType) continue;
             
@@ -47,7 +47,7 @@ public abstract class ConstructedCardModel(
     }
     protected ConstructedCardModel WithVar(string name, int baseVal, int upgrade = 0)
     {
-        _dynamicVars.Add(new DynamicVar(name, baseVal).WithUpgrade(upgrade));
+        _constructedDynamicVars.Add(new DynamicVar(name, baseVal).WithUpgrade(upgrade));
         return this;
     }
     
@@ -56,7 +56,7 @@ public abstract class ConstructedCardModel(
     /// </summary>
     protected ConstructedCardModel WithBlock(int baseVal, int upgrade = 0)
     {
-        _dynamicVars.Add(new BlockVar(baseVal, ValueProp.Move).WithUpgrade(upgrade));
+        _constructedDynamicVars.Add(new BlockVar(baseVal, ValueProp.Move).WithUpgrade(upgrade));
         return this;
     }
     
@@ -65,7 +65,7 @@ public abstract class ConstructedCardModel(
     /// </summary>
     protected ConstructedCardModel WithDamage(int baseVal, int upgrade = 0)
     {
-        _dynamicVars.Add(new DamageVar(baseVal, ValueProp.Move).WithUpgrade(upgrade));
+        _constructedDynamicVars.Add(new DamageVar(baseVal, ValueProp.Move).WithUpgrade(upgrade));
         return this;
     }
 
@@ -75,7 +75,7 @@ public abstract class ConstructedCardModel(
     protected ConstructedCardModel WithCards(int baseVal, int upgrade = 0)
     {
         var dynVar = new CardsVar(baseVal).WithUpgrade(upgrade);
-        _dynamicVars.Add(dynVar);
+        _constructedDynamicVars.Add(dynVar);
         return this;
     }
     
@@ -84,7 +84,7 @@ public abstract class ConstructedCardModel(
     /// </summary>
     protected ConstructedCardModel WithPower<T>(int baseVal, int upgrade = 0) where T : PowerModel
     {
-        _dynamicVars.Add(new PowerVar<T>(baseVal).WithUpgrade(upgrade));
+        _constructedDynamicVars.Add(new PowerVar<T>(baseVal).WithUpgrade(upgrade));
         _hoverTips.Add(new(_=>HoverTipFactory.FromPower<T>()));
         return this;
     }
@@ -94,14 +94,14 @@ public abstract class ConstructedCardModel(
     /// </summary>
     protected ConstructedCardModel WithPower<T>(string name, int baseVal, int upgrade = 0) where T : PowerModel
     {
-        _dynamicVars.Add(new PowerVar<T>(name, baseVal).WithUpgrade(upgrade));
+        _constructedDynamicVars.Add(new PowerVar<T>(name, baseVal).WithUpgrade(upgrade));
         _hoverTips.Add(new(_=>HoverTipFactory.FromPower<T>()));
         return this;
     }
     
     protected ConstructedCardModel WithTags(params CardTag[] tags)
     {
-        foreach (var cardTag in tags) _tags.Add(cardTag);
+        foreach (var cardTag in tags) _constructedTags.Add(cardTag);
         return this;
     }
 
@@ -175,12 +175,12 @@ public abstract class ConstructedCardModel(
         if (_hasCalculatedVar) throw new Exception("Cards only support one calculated variable currently");
         _hasCalculatedVar = true;
 
-        _dynamicVars.Add(new CalculationBaseVar(baseVal).WithUpgrade(upgrade));
-        _dynamicVars.Add(var is CalculatedDamageVar
+        _constructedDynamicVars.Add(new CalculationBaseVar(baseVal).WithUpgrade(upgrade));
+        _constructedDynamicVars.Add(var is CalculatedDamageVar
             ? new ExtraDamageVar(multVal).WithUpgrade(bonusUpgrade)
             : new CalculationExtraVar(multVal).WithUpgrade(bonusUpgrade));
         
-        _dynamicVars.Add(var.WithMultiplier(mult));
+        _constructedDynamicVars.Add(var.WithMultiplier(mult));
     }
 
     protected ConstructedCardModel WithKeywords(params CardKeyword[] keywords)
