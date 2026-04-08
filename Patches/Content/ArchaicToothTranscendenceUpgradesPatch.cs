@@ -6,17 +6,28 @@ using MegaCrit.Sts2.Core.Models.Relics;
 namespace BaseLib.Patches.Content;
 
 [HarmonyPatch(typeof(ArchaicTooth), nameof(ArchaicTooth.TranscendenceUpgrades),  MethodType.Getter)]
-public static class ArchaicToothTranscendenceUpgradesPatch
+class ArchaicToothTranscendenceUpgradesPatch
 {
+    private static Dictionary<ModelId, CardModel>? _customTranscendence;
+    
     [HarmonyPostfix]
-    public static void AddTranscendenceUpgradeForCustomCharacters(ref Dictionary<ModelId, CardModel> __result)
+    static void AddTranscendenceUpgradeForCustomCharacters(ref Dictionary<ModelId, CardModel> __result)
     {
-        foreach (var cardModel in ModelDb.AllCards)
+        if (_customTranscendence == null)
         {
-            if (cardModel is ICustomTranscendenceTarget target)
+            _customTranscendence = [];
+            foreach (var cardModel in ModelDb.AllCards)
             {
-                __result[cardModel.Id] = target.GetTranscendenceTransformedCard();
+                if (cardModel is ICustomTranscendenceTarget target)
+                {
+                    _customTranscendence[cardModel.Id] = target.GetTranscendenceTransformedCard();
+                }
             }
+        }
+
+        foreach (var entry in _customTranscendence)
+        {
+            __result[entry.Key] = entry.Value;
         }
     }
 }
