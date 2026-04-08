@@ -204,7 +204,7 @@ public abstract class ConstructedCardModel(
         return this;
     }
 
-    internal int? CostUpgrade = null;
+    internal int? CostUpgrade;
 
     /// <summary>
     /// Adjusts the card's energy cost when upgraded. Use negative values to reduce cost, positive to increase.
