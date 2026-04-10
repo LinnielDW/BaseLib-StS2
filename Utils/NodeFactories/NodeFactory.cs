@@ -257,6 +257,14 @@ public abstract class NodeFactory
             return;
         }
 
+        if (!scenePath.StartsWith("res://") && !scenePath.StartsWith("user://"))
+        {
+            BaseLibMain.Logger.Warn($"Registering non-res or user path '{scenePath}'; assuming res path");
+            scenePath = "res://" + scenePath;
+        }
+
+        scenePath = scenePath.SimplifyPath();
+
         if (_registeredScenes.TryGetValue(scenePath, out var existing) && existing.Item1 != nodeType.Item1)
             BaseLibMain.Logger.Warn($"Overwriting scene registration for '{scenePath}': {existing.Item1.Name} → {nodeType.Item1.Name}");
 
@@ -285,7 +293,7 @@ public abstract class NodeFactory
     {
         if (result == null || (_convertingNodes != null && _convertingNodes.Contains(result))) return false;
 
-        var path = scene.ResourcePath;
+        var path = scene.ResourcePath.SimplifyPath();
         if (string.IsNullOrEmpty(path)) return false;
         if (!_registeredScenes.TryGetValue(path, out var sceneInfo)) return false; //No registered conversion
         if (sceneInfo.Item1.IsInstanceOfType(result)) return false; // already the right type
