@@ -54,6 +54,10 @@ public abstract class CustomCharacterModel : CharacterModel, ICustomModel, ILoca
     /// </summary>
     public virtual string? CustomEnergyCounterPath => null;
     
+    /// <summary>
+    /// Path to a Godot scene for the rest site animation.
+    /// It can either be fully set up as a rest site animation scene, or a single root Sprite2D node which will be automatically converted.
+    /// </summary>
     public virtual string? CustomRestSiteAnimPath => null;
     public virtual string? CustomMerchantAnimPath => null;
     public virtual string? CustomArmPointingTexturePath => null;
