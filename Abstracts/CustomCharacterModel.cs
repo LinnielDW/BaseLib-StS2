@@ -453,7 +453,7 @@ class TrailPath
 }
 
 [HarmonyPatch(typeof(CharacterModel),  "IconOutlineTexturePath", MethodType.Getter)]
-class IconTexturePath
+class IconOutlineTexturePath
 {
     [HarmonyPrefix]
     static bool Custom(CharacterModel __instance, ref string? __result)
