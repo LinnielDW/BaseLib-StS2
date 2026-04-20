@@ -62,7 +62,7 @@ public class AddedNode<TParentType, TNode> : SpireField<TParentType, TNode> wher
     public AddedNode(string scenePath, Action<TParentType, TNode>? extraSetup = null) :
         this(parent =>
         {
-            var scene = SceneHelper.Instantiate<TNode>(scenePath);
+            var scene = ResourceLoader.Load<PackedScene>(scenePath).Instantiate<TNode>();
             extraSetup?.Invoke(parent, scene);
             return scene;
         })
