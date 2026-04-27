@@ -384,7 +384,6 @@ public static class AsyncMethodCall
         //BaseLibMain.Logger.Info($"Return value label: {retValLabel.Id}");
 
         int newStateIndex = states.Count;
-        BaseLibMain.Logger.Info($"Adding new state {newStateIndex} for method {callMethod.DeclaringType?.Name ?? "???"}.{callMethod.Name} {(before ? "before" : "after")} {targetMethod.Name}");
         
         //Look for fields that match target method parameter names
         var methodCallParams = callMethod.GetParameters().Select(param => MakeStateParameter(original, stateMachineType, param)).ToList();
@@ -449,6 +448,8 @@ public static class AsyncMethodCall
                 }
                 break;
         }
+        
+        BaseLibMain.Logger.Info($"Adding new state {newStateIndex} for method {callMethod.DeclaringType?.Name ?? "???"}.{callMethod.Name} {(before ? "before" : "after")} {targetMethod.Name} with result type {resultType} ({resultName})");
         
         //Generate label and branch instruction
         var loadStateLabel = generator.DefineLabel();
@@ -593,16 +594,11 @@ public static class AsyncMethodCall
             }
 
             reader
-                .GetIndexOperand(out var awaiterLocalIndex) //Index of awaiter in local vars
                 .Step(-2).GetOperand(out var operand) //Get method called to get awaited task
                 .Step(3)
                 .Match(storeStateMatcher); //Move to next state store (occurs when awaited task does not end immediately)
             var method = operand as MethodInfo ?? throw new InvalidOperationException("Failed to get awaited method from call instruction");
 
-            var returnType = method.ReturnType;
-            returnType = returnType.IsGenericType ? returnType.GenericTypeArguments[0] : typeof(void);
-
-            BaseLibMain.Logger.Info($"State {stateIndex} method {method.Name} with return type {returnType}");
             return method;
         }
 
@@ -735,9 +731,9 @@ public static class AsyncMethodCall
                     newCode.Add(new CodeInstruction(OpCodes.Leave, retValLabel));
                     break;
                 case ResultType.ReturnIf:
-                    Label skipLeaveLabel = generator.DefineLabel();
                     //Currently a bool on stack.
-                    newCode.Add(new CodeInstruction(OpCodes.Brtrue_S, skipLeaveLabel));
+                    Label skipLeaveLabel = generator.DefineLabel();
+                    newCode.Add(new CodeInstruction(OpCodes.Brfalse_S, skipLeaveLabel));
                     newCode.Add(new CodeInstruction(OpCodes.Leave, retValLabel));
                     newCode.Add(new CodeInstruction(OpCodes.Nop).WithLabels(skipLeaveLabel));
                     break;
