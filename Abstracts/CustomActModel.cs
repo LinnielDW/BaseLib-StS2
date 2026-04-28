@@ -139,6 +139,17 @@ public abstract class CustomActModel : ActModel, ICustomModel, ISceneConversions
     #endregion default values
 
     /// <summary>
+    /// Override to generate a map using custom logic.
+    /// </summary>
+    /// <param name="runState"></param>
+    /// <param name="replaceTreasureWithElites"></param>
+    /// <returns></returns>
+    protected virtual ActMap? CustomCreateMap(RunState runState, bool replaceTreasureWithElites)
+    {
+        return null;
+    }
+
+    /// <summary>
     /// Override this if you want to provide your own BackgroundScene
     /// </summary>
     protected virtual string CustomBackgroundScenePath => "res://BaseLib/scenes/dynamic_background.tscn";
@@ -167,6 +178,18 @@ public abstract class CustomActModel : ActModel, ICustomModel, ISceneConversions
     }
 
     #region Patches
+
+    [HarmonyPatch(typeof(ActModel), nameof(ActModel.CreateMap))]
+    class CustomCreateMapPatch
+    {
+        [HarmonyPrefix]
+        static bool UseCustomMap(ActModel __instance, RunState runState, bool replaceTreasureWithElites, ref ActMap? __result)
+        {
+            if (__instance is not CustomActModel customAct) return true;
+            __result = customAct.CustomCreateMap(runState, replaceTreasureWithElites);
+            return __result == null;
+        }
+    }
 
     [HarmonyPatch(typeof(ActModel), nameof(ActModel.BackgroundScenePath), MethodType.Getter)]
     class CustomActBackgroundScenePath
