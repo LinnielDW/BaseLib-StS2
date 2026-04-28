@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://b8n43gmdnft8t"]
 
-[ext_resource type="Script" uid="uid://djhnkgcjhs68f" path="res://Acts/NDynamicCombatBackground.cs" id="1_7tjxx"]
+[ext_resource type="Script" path="res://BaseLibScenes/Acts/NDynamicCombatBackground.cs" id="1_7tjxx"]
 
 [node name="DynamicBackground" type="Control"]
 layout_mode = 3

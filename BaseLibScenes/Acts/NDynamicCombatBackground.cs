@@ -4,7 +4,7 @@ using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Rooms;
 
-namespace BaseLib.Acts;
+namespace BaseLib.BaseLibScenes.Acts;
 
 /// <summary>
 /// Attached to the dynamic_background.tscn root node.<br></br>
@@ -16,7 +16,7 @@ public partial class NDynamicCombatBackground : NCombatBackground
 {
     private void CreateLayerNodes(BackgroundAssets assets)
     {
-        Control? baseLayer  = GetNode<Control>("%Layer_00");
+        Control? baseLayer = GetNode<Control>("%Layer_00");
         if (baseLayer is null)
         {
             BaseLibMain.Logger.Error("Attempt to create dynamic layers failed, no base layer 'Layer_00' found!");

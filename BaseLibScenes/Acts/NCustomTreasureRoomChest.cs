@@ -5,7 +5,7 @@ using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 
-namespace BaseLib.Acts;
+namespace BaseLib.BaseLibScenes.Acts;
 
 
 /// <summary>
@@ -20,7 +20,6 @@ namespace BaseLib.Acts;
 [GlobalClass]
 public partial class NCustomTreasureRoomChest  : Control
 {
-    
     public static NCustomTreasureRoomChest? Create(NTreasureRoom nTreasureRoom, IRunState runState, NButton chestButton, string scenePath)
     {
         NCustomTreasureRoomChest nTestChestAnim = PreloadManager.Cache.GetScene(scenePath).Instantiate<NCustomTreasureRoomChest>(PackedScene.GenEditState.Disabled);
